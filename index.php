@@ -62,22 +62,33 @@ class collection {
         return $recordsSet;
     }
 }
-class accounts extends collection {
+
+    class accounts extends collection
+
+    {
+
     protected static $modelName = 'account';
-}
-class todos extends collection {
+
+    }
+
+    class todos extends collection
+    {
+
     protected static $modelName = 'todo';
-}
-class model {
+
+    }
+
+    class model {
     //protected $id;
     public function save()
-    {
-        echo "a" . $this->id;
+        {
         if ($this->id == '') {
             $sql = $this->insert();
-        } else {
+        } else
+            {
+
             $sql = $this->update();
-        }
+            }
         $db = dbConn::getConnection();
         $statement = $db->prepare($sql);
         $statement->execute();
@@ -94,8 +105,11 @@ class model {
         $modelName=static::$modelName;
         $tableName = $modelName::getTablename();
         $array = get_object_vars($this);
-        $columnString = implode(',', array_flip($array));
-        $valueString = ':'.implode(',:', array_flip($array));
+        array_pop($array);
+        $colStr = array_keys($array);
+        $columnString = implode(',', $colStr);
+        // $valueString = ':'.implode(',:', array_flip($array));
+        $valueString = "'".implode("','", $array)."'";
         $sql =  'INSERT INTO '.$tableName.' ('.$columnString.') VALUES ('.$valueString.')';
         echo $sql;
         return $sql;
@@ -195,18 +209,18 @@ $obj = new main();
         $records = todos::findOne($id);
         $tableGen = htmlTable::genarateTable($records);
 
-        $records = accounts::findAll();
-        $tableGen = htmlTable::genarateTable($records);
+        // $records = accounts::findAll();
+        // $tableGen = htmlTable::genarateTable($records);
 
         //inserting a record
 
         $record = new todo();
         $record->id='';
-        $record->owneremail="abc10@gmail.com";
-        $record->ownerid="11";
+        $record->owneremail="srk77@gmail.com";
+        $record->ownerid="9";
         $record->createddate="2017-11-15";
         $record->duedate="2017-12-20";
-        $record->message="inseting values";
+        $record->message="inseting test";
         $record->isdone="1";
         $record->save();
 
@@ -217,7 +231,7 @@ $obj = new main();
 
 
         $record = new todo();
-        $record->id=5;
+        $record->id=8;
         $record->owneremail="srk77@njit.edu";
         $record->message="update";
         $record->save();
@@ -229,7 +243,7 @@ $obj = new main();
         //Deleting a record
 
         $record= new todo();
-        $record->id=5;
+        $record->id=7;
         $record->delete();
 
 
