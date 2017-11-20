@@ -1,8 +1,7 @@
 <?php
-
 //turn on debugging messages
-ini_set('display_errors', 'On');
-error_reporting(E_ALL);
+//ini_set('display_errors', 'On');
+error_reporting(E_ERROR );
 define('DATABASE', 'srk77');
 define('USERNAME', 'srk77');
 define('PASSWORD', 'shweta13');
@@ -33,11 +32,10 @@ class dbConn{
         return self::$db;
     }
 }
-class collection 
-{
+class collection {
     static public function create() {
-      $model = new static::$modelName;
-      return $model;
+        $model = new static::$modelName;
+        return $model;
     }
     static public function findAll() {
         $db = dbConn::getConnection();
@@ -48,6 +46,7 @@ class collection
         $class = static::$modelName;
         $statement->setFetchMode(PDO::FETCH_CLASS, $class);
         $recordsSet =  $statement->fetchAll();
+        echo " Display the entire table- " .$tableName;
         return $recordsSet;
     }
     static public function findOne($id) {
@@ -59,18 +58,186 @@ class collection
         $class = static::$modelName;
         $statement->setFetchMode(PDO::FETCH_CLASS, $class);
         $recordsSet =  $statement->fetchAll();
-        return $recordsSet[0];
+        echo "Display one record- ". $tableName;
+        return $recordsSet;
     }
 }
-
 class accounts extends collection {
     protected static $modelName = 'account';
 }
 class todos extends collection {
     protected static $modelName = 'todo';
 }
+class model {
+    //protected $id;
+    public function save()
+    {
+        echo "a" . $this->id;
+        if ($this->id == '') {
+            $sql = $this->insert();
+        } else {
+            $sql = $this->update();
+        }
+        $db = dbConn::getConnection();
+        $statement = $db->prepare($sql);
+        $statement->execute();
+        $tableName = get_called_class();
+        $array = get_object_vars($this);
+        $columnString = implode(',', $array);
+        $valueString = ":".implode(',:', $array);
+        //echo "INSERT INTO $tableName (" . $columnString . ") VALUES (" .$valueString . ")</br>";
+        echo 'I just saved record: ' . $this->id;
+    }
 
-$records = todos::findOne(2);
-print_r($records);
 
+    private function insert() {
+        $modelName=static::$modelName;
+        $tableName = $modelName::getTablename();
+        $array = get_object_vars($this);
+        $columnString = implode(',', array_flip($array));
+        $valueString = ':'.implode(',:', array_flip($array));
+        $sql =  'INSERT INTO '.$tableName.' ('.$columnString.') VALUES ('.$valueString.')';
+        echo $sql;
+        return $sql;
+    }
+    private function update() {
+        $modelName=static::$modelName;
+        $tableName = $modelName::getTablename();
+        $array = get_object_vars($this);
+        $comma = " ";
+        $sql = 'UPDATE '.$tableName.' SET ';
+        foreach ($array as $key=>$value){
+            if( ! empty($value) && $key != "id")
+            {
+                $sql .= $comma . $key . ' = "'. $value .'"';
+                $comma = ", ";
+            }
+        }
+        $sql .= ' WHERE id='.$this->id;
+        echo $sql;
+        return $sql;
+    }
+    public function delete() {
+        $db = dbConn::getConnection();
+        $modelName=static::$modelName;
+        $tableName = $modelName::getTablename();
+        $sql = 'DELETE FROM '.$tableName.' WHERE id='.$this->id;
+        echo $sql;
+        $statement = $db->prepare($sql);
+        $statement->execute();
+        echo " One record deleted";
+    }
+}
+class account extends model {
+    public $id;
+    public $email;
+    public $fname;
+    public $lname;
+    public $phone;
+    public $birthday;
+    public $gender;
+    public $password;
+    protected static $modelName = 'account';
+    public static function getTablename(){
+        $tableName='accounts';
+        return $tableName;
+    }
+}
+class todo extends model {
+    public $id;
+    public $owneremail;
+    public $ownerid;
+    public $createddate;
+    public $duedate;
+    public $message;
+    public $isdone;
+
+    protected static $modelName = 'todo';
+    public static function getTablename(){
+        $tableName='todos';
+        return $tableName;
+    }
+}
+
+class htmlTable{
+    public function genarateTable($record){
+        $tableGen = '<table border="1" cellpadding="2" cellspacing="3">';
+
+
+            foreach($record as $row => $innerArray){
+                $tableGen .= '<tr>';
+                foreach($innerArray as $innerRow => $value){
+
+                    $tableGen .= '<td>' . $value.'</td>';
+
+                }
+                $tableGen.='</tr>';
+            }
+
+            $tableGen.='</table>';
+            print_r($tableGen);
+        }
+}
+
+$obj = new htmlTable();
+$obj = new main();
+
+
+    class main
+        {
+            public function __construct()
+        {
+
+        $records = todos::findAll();
+        $tableGen = htmlTable::genarateTable($records);
+
+        $id=4;
+        $records = todos::findOne($id);
+        $tableGen = htmlTable::genarateTable($records);
+
+        $records = accounts::findAll();
+        $tableGen = htmlTable::genarateTable($records);
+
+        //inserting a record
+
+        $record = new todo();
+        $record->id='';
+        $record->owneremail="abc10@gmail.com";
+        $record->ownerid="11";
+        $record->createddate="2017-11-15";
+        $record->duedate="2017-12-20";
+        $record->message="inseting values";
+        $record->isdone="1";
+        $record->save();
+
+        $records = todos::findAll();
+        $tableGen = htmlTable::genarateTable($records);
+
+        //updating a record
+
+
+        $record = new todo();
+        $record->id=5;
+        $record->owneremail="srk77@njit.edu";
+        $record->message="update";
+        $record->save();
+
+        $records = todos::findAll();
+
+        $tableGen = htmlTable::genarateTable($records);
+
+        //Deleting a record
+
+        $record= new todo();
+        $record->id=5;
+        $record->delete();
+
+
+        $records = todos::findAll();
+        $obj->genarateTable($records);
+        $tableGen = htmlTable::genarateTable($records);
+
+
+    }
+}
 ?>
